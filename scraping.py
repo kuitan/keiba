@@ -10,7 +10,7 @@ from utils import date_range
 def get_data(url, proxies):
     result_dir = './result/'  # 結果を出力するディレクトリ名
 
-    for d in date_range(date(2016, 1, 1), date(2021, 12, 8)):
+    for d in date_range(date(2011, 1, 1), date(2021, 12, 8)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
