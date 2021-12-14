@@ -39,10 +39,6 @@ def train(param, result_dir):
     lgb_eval = lgb.Dataset(x_valid, y_valid, reference=lgb_train)
 
     # ハイパーパラメータ
-    # max_depth = param['max_depth']
-    # num_leaves = param['num_leaves']
-
-    # ハイパーパラメータ
     params = {
         'task': 'train',
         'boosting_type': 'gbdt',
