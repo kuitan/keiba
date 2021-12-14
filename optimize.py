@@ -7,6 +7,7 @@ import json
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import pandas as pd
+import numpy as np
 
 def lgb_trial(trial):
     param = vars(args)  # コマンドライン引数を取り込み
@@ -43,8 +44,9 @@ def lgb_trial(trial):
 
     # 評価データのクラス予測確率 (各クラスの予測確率 [クラス0の予測確率,クラス1の予測確率] を返す)
     y_pred = model.predict(x_valid)
+    pred_labels = np.rint(y_pred)
 
-    acc = accuracy_score(y_valid, y_pred)
+    acc = accuracy_score(y_valid, pred_labels)
     return acc
 
 
