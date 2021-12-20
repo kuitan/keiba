@@ -49,6 +49,13 @@ def train(param, result_dir):
         # 'max_depth': 7,
         # 'num_iteration': 1000,  # epoch
         # 'verbose': 0,
+        # 'bagging_fraction': 0.7005946250957218,
+        # 'bagging_freq': 2,
+        # 'feature_fraction': 0.9536941283543565,
+        # 'lambda_l1': 0.0007791579526795777,
+        # 'lambda_l2': 0.00039109643894750883,
+        # 'min_child_samples': 59,
+        # 'num_leaves': 30
     }
 
     # モデルの学習

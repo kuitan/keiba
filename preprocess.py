@@ -213,6 +213,9 @@ def preprocess():
     # categories = set(df1['race_type'].unique().tolist())
     # print(categories)
 
+    del df1['horse_weight']
+    del df1['horse_weight_difference']
+
     print(df1)
 
     # 辞書をnpyファイルで出力
@@ -379,6 +382,9 @@ def test_preprocess():
     # カテゴリを調べる
     # categories = set(df1['race_type'].unique().tolist())
     # print(categories)
+
+    del df['horse_weight']
+    del df['horse_weight_difference']
 
     print(df)
 
