@@ -15,7 +15,7 @@ def preprocess():
     jockey_dic = {}
     trainer_dic = {}
 
-    for d in date_range(date(2011, 1, 1), date(2021, 12, 8)):
+    for d in date_range(date(2011, 1, 1), date(2021, 12, 26)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
@@ -213,8 +213,8 @@ def preprocess():
     # categories = set(df1['race_type'].unique().tolist())
     # print(categories)
 
-    del df1['horse_weight']
-    del df1['horse_weight_difference']
+    # del df1['horse_weight']
+    # del df1['horse_weight_difference']
 
     print(df1)
 
@@ -383,8 +383,8 @@ def test_preprocess():
     # categories = set(df1['race_type'].unique().tolist())
     # print(categories)
 
-    del df['horse_weight']
-    del df['horse_weight_difference']
+    # del df['horse_weight']
+    # del df['horse_weight_difference']
 
     print(df)
 

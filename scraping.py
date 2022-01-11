@@ -10,7 +10,7 @@ from utils import date_range
 def get_data(url, proxies):
     result_dir = './result/'  # 結果を出力するディレクトリ名
 
-    for d in date_range(date(2011, 1, 1), date(2021, 12, 8)):
+    for d in date_range(date(2011, 1, 1), date(2022, 1, 11)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
@@ -35,6 +35,10 @@ def get_data(url, proxies):
                 df = pd.read_html(res.content, match='馬名')[0]  # Tableを抽出
 
                 soup = soup.select_one('dl.racedata')
+                race_title = soup.select_one('h1')
+                race_title = race_title.contents[0]
+                df['レース種類'] = race_title
+
                 race_cond = soup.select_one('span')
                 race_cond = race_cond.contents[0].split('/')
                 df['レース名'] = race_cond[0]

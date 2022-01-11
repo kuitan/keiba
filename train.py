@@ -116,7 +116,14 @@ def train(param, result_dir):
     plt.close()
 
     # テストデータの予測値の表示
-    df_pred = pd.DataFrame({'pred': t_pred})
+    # df_pred = pd.DataFrame({'pred': t_pred})
     df_pred_prob = pd.DataFrame({'target0_prob': 1 - t_pred_prob, 'target1_prob': t_pred_prob})
-    print(df_pred)
+    # print(df_pred)
     print(df_pred_prob)
+
+    # 買い目の馬を表示
+    idx = np.arange(1, len(df_pred_prob)+1)
+    df_pred_prob['horse_num'] = idx  # 馬番を追加
+    df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
+    del df_s['target0_prob']
+    print(df_s)
