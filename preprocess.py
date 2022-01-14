@@ -15,7 +15,7 @@ def preprocess():
     jockey_dic = {}
     trainer_dic = {}
 
-    for d in date_range(date(2011, 1, 1), date(2021, 12, 26)):
+    for d in date_range(date(2011, 1, 1), date(2022, 1, 11)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
@@ -160,6 +160,31 @@ def preprocess():
             df = df[df[np.nan] != 1]  # 欠損値を除外
             del df[np.nan]
 
+            # レース種類からG1,2,3,L,その他を分類
+            name_list = []
+            for name in df['レース種類'].astype('str'):
+                if re.compile('\(G\d\)').search(name):
+                    # name_list.append(re.findall('G\d', name)[0])
+                    g_name = re.findall('G\d', name)[0]
+                    name_list.append(int(re.findall('\d', g_name)[0])*0.1)
+                elif re.compile('\(L\)').search(name):
+                    # name_list.append('L')
+                    name_list.append(0.4)
+                else:
+                    # name_list.append('other')
+                    name_list.append(0.5)
+            df['race_title'] = name_list
+            del df['レース種類']
+
+            # レース種類のone-hot encoding
+            # categories = {'G1', 'G2', 'G3', 'L', 'other'}
+            # df['race_title'] = pd.Categorical(df['race_title'], categories=categories)
+            # df = pd.concat([df, pd.get_dummies(df['race_title'], dummy_na=True)], axis=1)
+            # df = df.rename(columns={'G1': 'G1', 'G2': 'G2', 'G3': 'G3', 'L': 'L', 'other': 'other_races'})
+            # del df['race_title']
+            # df = df[df[np.nan] != 1]  # 欠損値を除外
+            # del df[np.nan]
+
             if i == 0:
                 df1 = df
             else:
@@ -201,6 +226,10 @@ def preprocess():
     del df1['time_difference']
     del df1['popular']
 
+    # カテゴリを調べる
+    # categories = set(df1['race_title'].unique().tolist())
+    # print(categories)
+
     # 各列の標準化
     df1 = df1.astype('float64')
     # categories = ['frame_num', 'weight_to_carry', 'win', 'popular', 'age', 'horse_weight', 'horse_weight_difference',
@@ -209,12 +238,8 @@ def preprocess():
     for header in categories:
         df1[header] = (df1[header]-df1[header].mean()) / df1[header].std()
 
-    # カテゴリを調べる
-    # categories = set(df1['race_type'].unique().tolist())
-    # print(categories)
-
-    # del df1['horse_weight']
-    # del df1['horse_weight_difference']
+    del df1['horse_weight']
+    del df1['horse_weight_difference']
 
     print(df1)
 
@@ -361,6 +386,30 @@ def test_preprocess():
     df = df[df[np.nan] != 1]  # 欠損値を除外
     del df[np.nan]
 
+    # レース種類からG1,2,3,L,その他を分類
+    name_list = []
+    for name in df['レース種類'].astype('str'):
+        if re.compile('G\d').search(name):
+            # name_list.append(re.findall('G\d', name)[0])
+            name_list.append(int(re.findall('\d', name)[0])*0.1)
+        elif re.compile('L').search(name):
+            # name_list.append('L')
+            name_list.append(0.4)
+        else:
+            # name_list.append('other')
+            name_list.append(0.5)
+    df['race_title'] = name_list
+    del df['レース種類']
+
+    # レース種類のone-hot encoding
+    # categories = {'G1', 'G2', 'G3', 'L', 'other'}
+    # df['race_title'] = pd.Categorical(df['race_title'], categories=categories)
+    # df = pd.concat([df, pd.get_dummies(df['race_title'], dummy_na=True)], axis=1)
+    # df = df.rename(columns={'G1': 'G1', 'G2': 'G2', 'G3': 'G3', 'L': 'L', 'other': 'other_races'})
+    # del df['race_title']
+    # df = df[df[np.nan] != 1]  # 欠損値を除外
+    # del df[np.nan]
+
     # 欠損値を除外
     df = df[df['length'] != '2']  # 欠損値を除外
 
@@ -383,8 +432,8 @@ def test_preprocess():
     # categories = set(df1['race_type'].unique().tolist())
     # print(categories)
 
-    # del df['horse_weight']
-    # del df['horse_weight_difference']
+    del df['horse_weight']
+    del df['horse_weight_difference']
 
     print(df)
 
