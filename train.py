@@ -6,11 +6,21 @@ import pandas as pd
 from utils import display, plot_feature_importance
 import matplotlib.pyplot as plt
 import numpy as np
+from torch.utils.data import DataLoader, TensorDataset
+from neural_net import Ann
+import torch
+import torch.nn as nn
+from torch.optim import SGD
+from torch.autograd import Variable
+from utils import get_device
 
 
 def train(param, result_dir):
+    device = get_device()  # デバイスを取得
+
     train_file = param['train_file']
     test_file = param['test_file']
+    model_param = param['model']
 
     # keibaデータセットの読み込み
     df = pd.read_csv(f'{train_file}')
@@ -35,95 +45,155 @@ def train(param, result_dir):
     print('target1 の割合 :', n_target1/n_all)  # target1(2位以内)の割合
 
     # 学習に使用するデータを設定
-    lgb_train = lgb.Dataset(x_train, y_train)
-    lgb_eval = lgb.Dataset(x_valid, y_valid, reference=lgb_train)
+    if model_param == 'gbm':
+        lgb_train = lgb.Dataset(x_train, y_train)
+        lgb_eval = lgb.Dataset(x_valid, y_valid, reference=lgb_train)
+    else:
+        x_train = torch.from_numpy(x_train).float()
+        y_train = torch.from_numpy(y_train).long()
+        x_valid = torch.from_numpy(x_valid).float()
+        y_valid = torch.from_numpy(y_valid).long()
+        train_tensor = TensorDataset(x_train, y_train)
+        valid_tensor = TensorDataset(x_valid, y_valid)
+
+        train_dataloader = DataLoader(train_tensor, batch_size=16, shuffle=True)
+        valid_dataloader = DataLoader(valid_tensor, batch_size=16, shuffle=True)
+
+        model = Ann(input_dim=27).to(device)
+        criterion = nn.CrossEntropyLoss()
+        optimizer = SGD(model.parameters(), lr=0.01)
 
     # ハイパーパラメータ
-    params = {
-        'task': 'train',
-        'boosting_type': 'gbdt',
-        'objective': 'binary',  # 目的: 2クラス分類
-        'metric': {'binary_error'},  # 評価指標: 誤り率(= 1-正答率)
-        # 'num_leaves': 64,
-        # 'min_data_in_leaf': 20,
-        # 'max_depth': 7,
-        # 'num_iteration': 1000,  # epoch
-        # 'verbose': 0,
-        # 'bagging_fraction': 0.7005946250957218,
-        # 'bagging_freq': 2,
-        # 'feature_fraction': 0.9536941283543565,
-        # 'lambda_l1': 0.0007791579526795777,
-        # 'lambda_l2': 0.00039109643894750883,
-        # 'min_child_samples': 59,
-        # 'num_leaves': 30
-    }
+    if model_param == 'gbm':
+        params = {
+            'task': 'train',
+            'boosting_type': 'gbdt',
+            'objective': 'binary',  # 目的: 2クラス分類
+            'metric': {'binary_error'},  # 評価指標: 誤り率(= 1-正答率)
+            # 'num_leaves': 64,
+            # 'min_data_in_leaf': 20,
+            # 'max_depth': 7,
+            # 'num_iteration': 1000,  # epoch
+            # 'verbose': 0,
+            # 'bagging_fraction': 0.7005946250957218,
+            # 'bagging_freq': 2,
+            # 'feature_fraction': 0.9536941283543565,
+            # 'lambda_l1': 0.0007791579526795777,
+            # 'lambda_l2': 0.00039109643894750883,
+            # 'min_child_samples': 59,
+            # 'num_leaves': 30
+        }
 
-    # モデルの学習
-    model = lgb.train(params, train_set=lgb_train, valid_sets=lgb_eval)
-    model.save_model(f'{result_dir}model.txt', num_iteration=model.best_iteration)
+        # モデルの学習(LightGBM)
+        model = lgb.train(params, train_set=lgb_train, valid_sets=lgb_eval)
+        model.save_model(f'{result_dir}model.txt', num_iteration=model.best_iteration)
 
-    # 特徴量重要度の算出 (データフレームで取得)
-    cols = list(df.drop('target', axis=1).columns)  # 特徴量名のリスト(目的変数target以外)
-    f_importance = np.array(model.feature_importance())  # 特徴量重要度の算出
-    f_importance = f_importance / np.sum(f_importance)  # 正規化(必要ない場合はコメントアウト)
-    df_importance = pd.DataFrame({'feature': cols, 'importance': f_importance})
-    df_importance = df_importance.sort_values('importance', ascending=False)  # 降順ソート
-    display(df_importance)
+    else:
+        # モデルの学習(ANN)
+        epoch_num = 2
+        loss_list = []
+        for epoch in range(2):
+            total_loss = 0
+            for train_x, train_y in train_dataloader:
+                train_x, train_y = Variable(train_x).to(device), Variable(train_y).to(device)
+                optimizer.zero_grad()
+                output = model(train_x)
+                loss = criterion(output, train_y)
+                loss.backward()
+                optimizer.step()
+                total_loss += loss.item()
 
-    # 特徴量重要度の可視化
-    plot_feature_importance(df_importance, result_dir)
+            print('epoch: ', epoch+1, 'loss: ', total_loss)
+            loss_list.append(total_loss)
 
-    # 評価データのクラス予測確率 (各クラスの予測確率 [クラス0の予測確率,クラス1の予測確率] を返す)
-    y_pred_prob = model.predict(x_valid)
-    # 評価データの予測クラス(予測クラス(0 or 1)を返す)
-    y_pred = np.where(y_pred_prob < 0.5, 0, 1)  # 0.5より小さい場合0, そうでない場合1
+    if model_param == 'gbm':
+        # 特徴量重要度の算出 (データフレームで取得)
+        cols = list(df.drop('target', axis=1).columns)  # 特徴量名のリスト(目的変数target以外)
+        f_importance = np.array(model.feature_importance())  # 特徴量重要度の算出
+        f_importance = f_importance / np.sum(f_importance)  # 正規化(必要ない場合はコメントアウト)
+        df_importance = pd.DataFrame({'feature': cols, 'importance': f_importance})
+        df_importance = df_importance.sort_values('importance', ascending=False)  # 降順ソート
+        display(df_importance)
 
-    # テストデータのクラス予測確率
-    t_pred_prob = model.predict(t)
-    # テストデータの予測クラス
-    t_pred = np.where(t_pred_prob < 0.5, 0, 1)  # 0.5より小さい場合0, そうでない場合1
+        # 特徴量重要度の可視化
+        plot_feature_importance(df_importance, result_dir)
 
-    # 真値と予測値の表示
-    df_pred = pd.DataFrame({'target': y_valid, 'pred': y_pred})
-    display(df_pred)
+        # 評価データのクラス予測確率 (各クラスの予測確率 [クラス0の予測確率,クラス1の予測確率] を返す)
+        y_pred_prob = model.predict(x_valid)
+        # 評価データの予測クラス(予測クラス(0 or 1)を返す)
+        y_pred = np.where(y_pred_prob < 0.5, 0, 1)  # 0.5より小さい場合0, そうでない場合1
 
-    # 真値と予測確率の表示
-    df_pred_prob = pd.DataFrame({'target': y_valid, 'target0_prob': 1 - y_pred_prob, 'target1_prob': y_pred_prob})
-    display(df_pred_prob)
+        # テストデータのクラス予測確率
+        t_pred_prob = model.predict(t)
+        # テストデータの予測クラス
+        t_pred = np.where(t_pred_prob < 0.5, 0, 1)  # 0.5より小さい場合0, そうでない場合1
 
-    # モデル評価
-    acc = accuracy_score(y_valid, y_pred)
-    print('Acc :', acc)
+        # 真値と予測値の表示
+        df_pred = pd.DataFrame({'target': y_valid, 'pred': y_pred})
+        display(df_pred)
 
-    # LogLoss
-    loss = log_loss(y_valid, y_pred_prob)  # 引数 : log_loss(正解クラス, [クラス0の予測確率, クラス1の予測確率])
-    print('Log Loss :', loss)
+        # 真値と予測確率の表示
+        df_pred_prob = pd.DataFrame({'target': y_valid, 'target0_prob': 1 - y_pred_prob, 'target1_prob': y_pred_prob})
+        display(df_pred_prob)
 
-    # AUC
-    auc = roc_auc_score(y_valid, y_pred_prob)  # 引数 : roc_auc_score(正解クラス, クラス1の予測確率)
-    print('AUC :', auc)
+        # モデル評価
+        acc = accuracy_score(y_valid, y_pred)
+        print('Acc :', acc)
 
-    # ROC曲線: 評価指標AUCを算出する際に用いる曲線
-    fpr, tpr, thresholds = roc_curve(y_valid, y_pred_prob)
-    auc = metrics.auc(fpr, tpr)
-    plt.figure()
-    plt.plot(fpr, tpr, label='ROC curve (area = %.2f)' % auc)
-    plt.legend()
-    plt.xlabel('FPR: False positive rate')
-    plt.ylabel('TPR: True positive rate')
-    plt.grid()
-    plt.savefig(f'{result_dir}roc_curve.png')
-    plt.close()
+        # LogLoss
+        loss = log_loss(y_valid, y_pred_prob)  # 引数 : log_loss(正解クラス, [クラス0の予測確率, クラス1の予測確率])
+        print('Log Loss :', loss)
 
-    # テストデータの予測値の表示
-    # df_pred = pd.DataFrame({'pred': t_pred})
-    df_pred_prob = pd.DataFrame({'target0_prob': 1 - t_pred_prob, 'target1_prob': t_pred_prob})
-    # print(df_pred)
-    print(df_pred_prob)
+        # AUC
+        auc = roc_auc_score(y_valid, y_pred_prob)  # 引数 : roc_auc_score(正解クラス, クラス1の予測確率)
+        print('AUC :', auc)
 
-    # 買い目の馬を表示
-    idx = np.arange(1, len(df_pred_prob)+1)
-    df_pred_prob['horse_num'] = idx  # 馬番を追加
-    df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
-    del df_s['target0_prob']
-    print(df_s)
+        # ROC曲線: 評価指標AUCを算出する際に用いる曲線
+        fpr, tpr, thresholds = roc_curve(y_valid, y_pred_prob)
+        auc = metrics.auc(fpr, tpr)
+        plt.figure()
+        plt.plot(fpr, tpr, label='ROC curve (area = %.2f)' % auc)
+        plt.legend()
+        plt.xlabel('FPR: False positive rate')
+        plt.ylabel('TPR: True positive rate')
+        plt.grid()
+        plt.savefig(f'{result_dir}roc_curve.png')
+        plt.close()
+
+        # テストデータの予測値の表示
+        # df_pred = pd.DataFrame({'pred': t_pred})
+        df_pred_prob = pd.DataFrame({'target0_prob': 1 - t_pred_prob, 'target1_prob': t_pred_prob})
+        # print(df_pred)
+        print(df_pred_prob)
+
+        # 買い目の馬を表示
+        idx = np.arange(1, len(df_pred_prob) + 1)
+        df_pred_prob['horse_num'] = idx  # 馬番を追加
+        df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
+        del df_s['target0_prob']
+        print(df_s)
+
+    else:
+        # lossのグラフの表示
+        plt.figure()
+        plt.plot(np.arange(epoch_num), loss_list)
+        plt.xlabel('epoch')
+        plt.ylabel('loss')
+        plt.savefig(f'{result_dir}loss.png')
+        plt.close()
+
+        # テストデータの予測値の表示
+        t = torch.from_numpy(t.values).float()
+        t = Variable(t)
+        # test_tensor = TensorDataset(t)
+
+        # テストデータのクラス予測確率
+        t_pred = model(t)
+        print(t_pred)
+
+        # # 買い目の馬を表示
+        # idx = np.arange(1, len(df_pred_prob) + 1)
+        # df_pred_prob['horse_num'] = idx  # 馬番を追加
+        # df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
+        # del df_s['target0_prob']
+        # print(df_s)

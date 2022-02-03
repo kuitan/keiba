@@ -2,6 +2,7 @@ from datetime import timedelta
 import IPython
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 
 # 日付をfor文に使う関数
@@ -17,6 +18,7 @@ def display(*dfs, head=True):
     for df in dfs:
         IPython.display.display(df.head() if head else df)
 
+
 # 特徴量重要度を棒グラフでプロットする関数
 def plot_feature_importance(df, result_dir):
     n_features = len(df)                              # 特徴量数(説明変数の個数)
@@ -30,3 +32,15 @@ def plot_feature_importance(df, result_dir):
     plt.ylabel('Feature')                             # y軸のタイトル
     plt.savefig(f'{result_dir}feature_importance.png')
     plt.close()
+
+
+def get_device():
+    """
+    実行環境のデバイス(GPU or CPU) を取得
+    :return: デバイス (Device)
+    """
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
+    return device

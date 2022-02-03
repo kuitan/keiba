@@ -15,7 +15,7 @@ def preprocess():
     jockey_dic = {}
     trainer_dic = {}
 
-    for d in date_range(date(2011, 1, 1), date(2022, 1, 11)):
+    for d in date_range(date(2011, 1, 1), date(2022, 1, 28)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
