@@ -56,10 +56,10 @@ def train(param, result_dir):
         y_valid = torch.from_numpy(y_valid).long()
         t = torch.from_numpy(t.values).float()
         train_tensor = TensorDataset(x_train, y_train)
-        # valid_tensor = TensorDataset(x_valid, y_valid)
+        valid_tensor = TensorDataset(x_valid, y_valid)
 
-        train_dataloader = DataLoader(train_tensor, batch_size=16, shuffle=True)
-        # valid_dataloader = DataLoader(valid_tensor, batch_size=16, shuffle=True)
+        train_dataloader = DataLoader(train_tensor, batch_size=1024, shuffle=True)
+        valid_dataloader = DataLoader(valid_tensor, batch_size=1024, shuffle=True)
 
         model = Ann(input_dim=26).to(device)
         criterion = nn.CrossEntropyLoss()
@@ -95,8 +95,9 @@ def train(param, result_dir):
             model.load_state_dict(torch.load(f'{load_dir}lstm.nn', map_location=device))  # モデルを読み込み
         else:
             # モデルの学習(ANN)
-            epoch_num = 100
+            epoch_num = 1000
             loss_list = []
+            loss_test_list = []
             for epoch in range(epoch_num):
                 total_loss = 0
                 for train_x, train_y in train_dataloader:
@@ -108,9 +109,34 @@ def train(param, result_dir):
                     optimizer.step()
                     total_loss += loss.item()
 
-                print('epoch: ', epoch + 1, 'loss: ', total_loss)
+                # テスト
+                total_test_loss = 0
+                with torch.no_grad():
+                    for valid_x, valid_y in valid_dataloader:
+                        valid_x, valid_y = Variable(valid_x).to(device), Variable(valid_y).to(device)
+                        output = model(valid_x)
+                        loss = criterion(output, valid_y)
+                        total_test_loss += loss.item()
+
+                print('epoch: ', epoch + 1, 'train_loss: ', total_loss, 'valid_loss: ', total_test_loss)
                 loss_list.append(total_loss)
+                loss_test_list.append(total_test_loss)
             torch.save(model.state_dict(), f'{result_dir}lstm.nn')
+
+            # lossのグラフの表示
+            plt.figure()
+            plt.plot(np.arange(epoch_num), loss_list)
+            plt.xlabel('epoch')
+            plt.ylabel('loss')
+            plt.savefig(f'{result_dir}loss.png')
+            plt.close()
+
+            plt.figure()
+            plt.plot(np.arange(epoch_num), loss_test_list)
+            plt.xlabel('epoch')
+            plt.ylabel('loss')
+            plt.savefig(f'{result_dir}valid_loss.png')
+            plt.close()
 
     if model_param == 'gbm':
         # 特徴量重要度の算出 (データフレームで取得)
@@ -188,21 +214,13 @@ def train(param, result_dir):
         acc = sum(y_valid == np.array(result, dtype='float64')) / len(y_valid)
         print('Acc :', acc)
 
-        # lossのグラフの表示
-        plt.figure()
-        plt.plot(np.arange(epoch_num), loss_list)
-        plt.xlabel('epoch')
-        plt.ylabel('loss')
-        plt.savefig(f'{result_dir}loss.png')
-        plt.close()
-
         # テストデータの予測値の表示
         t = Variable(t).to(device)
 
         # テストデータのクラス予測確率
         t_pred = model(t)
         t_pred = t_pred.to('cpu').detach().numpy().copy()
-        t_pred_0 = t_pred.T[1]
+        t_pred_0 = t_pred.T[0]
         t_pred_1 = t_pred.T[1]
 
         df_pred_prob = pd.DataFrame({'target0_prob': t_pred_0, 'target1_prob': t_pred_1})
