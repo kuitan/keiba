@@ -21,6 +21,7 @@ def train(param, result_dir):
     train_file = param['train_file']
     test_file = param['test_file']
     model_param = param['model']
+    load_dir = param['load']
 
     # keibaデータセットの読み込み
     df = pd.read_csv(f'{train_file}')
@@ -53,13 +54,14 @@ def train(param, result_dir):
         y_train = torch.from_numpy(y_train).long()
         x_valid = torch.from_numpy(x_valid).float()
         y_valid = torch.from_numpy(y_valid).long()
+        t = torch.from_numpy(t.values).float()
         train_tensor = TensorDataset(x_train, y_train)
-        valid_tensor = TensorDataset(x_valid, y_valid)
+        # valid_tensor = TensorDataset(x_valid, y_valid)
 
         train_dataloader = DataLoader(train_tensor, batch_size=16, shuffle=True)
-        valid_dataloader = DataLoader(valid_tensor, batch_size=16, shuffle=True)
+        # valid_dataloader = DataLoader(valid_tensor, batch_size=16, shuffle=True)
 
-        model = Ann(input_dim=27).to(device)
+        model = Ann(input_dim=26).to(device)
         criterion = nn.CrossEntropyLoss()
         optimizer = SGD(model.parameters(), lr=0.01)
 
@@ -89,22 +91,26 @@ def train(param, result_dir):
         model.save_model(f'{result_dir}model.txt', num_iteration=model.best_iteration)
 
     else:
-        # モデルの学習(ANN)
-        epoch_num = 2
-        loss_list = []
-        for epoch in range(2):
-            total_loss = 0
-            for train_x, train_y in train_dataloader:
-                train_x, train_y = Variable(train_x).to(device), Variable(train_y).to(device)
-                optimizer.zero_grad()
-                output = model(train_x)
-                loss = criterion(output, train_y)
-                loss.backward()
-                optimizer.step()
-                total_loss += loss.item()
+        if load_dir is not None:  # ロードオプションが指定されていたらロード
+            model.load_state_dict(torch.load(f'{load_dir}lstm.nn', map_location=device))  # モデルを読み込み
+        else:
+            # モデルの学習(ANN)
+            epoch_num = 100
+            loss_list = []
+            for epoch in range(epoch_num):
+                total_loss = 0
+                for train_x, train_y in train_dataloader:
+                    train_x, train_y = Variable(train_x).to(device), Variable(train_y).to(device)
+                    optimizer.zero_grad()
+                    output = model(train_x)
+                    loss = criterion(output, train_y)
+                    loss.backward()
+                    optimizer.step()
+                    total_loss += loss.item()
 
-            print('epoch: ', epoch+1, 'loss: ', total_loss)
-            loss_list.append(total_loss)
+                print('epoch: ', epoch + 1, 'loss: ', total_loss)
+                loss_list.append(total_loss)
+            torch.save(model.state_dict(), f'{result_dir}lstm.nn')
 
     if model_param == 'gbm':
         # 特徴量重要度の算出 (データフレームで取得)
@@ -174,6 +180,14 @@ def train(param, result_dir):
         print(df_s)
 
     else:
+        # モデル評価
+        x_valid, y_valid = Variable(x_valid).to(device), Variable(y_valid).to(device)
+        result = torch.max(model(x_valid).data, 1)[1]
+        y_valid = y_valid.to('cpu').detach().numpy().copy()
+        result = result.to('cpu').detach().numpy().copy()
+        acc = sum(y_valid == np.array(result, dtype='float64')) / len(y_valid)
+        print('Acc :', acc)
+
         # lossのグラフの表示
         plt.figure()
         plt.plot(np.arange(epoch_num), loss_list)
@@ -183,17 +197,16 @@ def train(param, result_dir):
         plt.close()
 
         # テストデータの予測値の表示
-        t = torch.from_numpy(t.values).float()
-        t = Variable(t)
-        # test_tensor = TensorDataset(t)
+        t = Variable(t).to(device)
 
         # テストデータのクラス予測確率
         t_pred = model(t)
-        print(t_pred)
+        t_pred = t_pred.to('cpu').detach().numpy().copy()
+        t_pred_0 = t_pred.T[1]
+        t_pred_1 = t_pred.T[1]
 
-        # # 買い目の馬を表示
-        # idx = np.arange(1, len(df_pred_prob) + 1)
-        # df_pred_prob['horse_num'] = idx  # 馬番を追加
-        # df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
-        # del df_s['target0_prob']
-        # print(df_s)
+        df_pred_prob = pd.DataFrame({'target0_prob': t_pred_0, 'target1_prob': t_pred_1})
+        idx = np.arange(1, len(df_pred_prob) + 1)
+        df_pred_prob['horse_num'] = idx  # 馬番を追加
+        df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
+        print(df_s)

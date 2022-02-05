@@ -19,5 +19,6 @@ if __name__ == '__main__':
     parser.add_argument('-train', '--train_file', type=str, default='./data/preprocess.csv')
     parser.add_argument('-test', '--test_file', type=str, default='./data/test_preprocess.csv')
     parser.add_argument('-m', '--model', type=str, default='gbm')
+    parser.add_argument('-l', '--load', type=str, default=None)
     args = parser.parse_args()  # 引数解析
     main()

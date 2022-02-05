@@ -15,7 +15,7 @@ def preprocess():
     jockey_dic = {}
     trainer_dic = {}
 
-    for d in date_range(date(2011, 1, 1), date(2022, 1, 28)):
+    for d in date_range(date(2011, 1, 1), date(2022, 2, 3)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
@@ -234,9 +234,11 @@ def preprocess():
     df1 = df1.astype('float64')
     # categories = ['frame_num', 'weight_to_carry', 'win', 'popular', 'age', 'horse_weight', 'horse_weight_difference',
     #               'length']
-    categories = ['frame_num', 'weight_to_carry', 'win', 'age', 'horse_weight', 'horse_weight_difference', 'length']
+    categories = ['frame_num', 'weight_to_carry', 'win', 'horse_weight', 'horse_weight_difference']
     for header in categories:
         df1[header] = (df1[header]-df1[header].mean()) / df1[header].std()
+    df1['age'] = df1['age'] * 0.1
+    df1['length'] = df1['length'] * 0.001
 
     del df1['horse_weight']
     del df1['horse_weight_difference']
@@ -424,9 +426,11 @@ def test_preprocess():
     df = df.astype('float64')
     # categories = ['frame_num', 'weight_to_carry', 'win', 'popular', 'age', 'horse_weight', 'horse_weight_difference',
     #               'length']
-    categories = ['frame_num', 'weight_to_carry', 'win', 'age', 'horse_weight', 'horse_weight_difference', 'length']
+    categories = ['frame_num', 'weight_to_carry', 'win', 'horse_weight', 'horse_weight_difference']
     for header in categories:
         df[header] = (df[header]-df[header].mean()) / df[header].std()
+    df['age'] = df['age'] * 0.1
+    df['length'] = df['length']*0.001
 
     # カテゴリを調べる
     # categories = set(df1['race_type'].unique().tolist())
