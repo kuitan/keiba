@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.optim import SGD
 from torch.autograd import Variable
 from utils import get_device
+from sklearn.datasets import load_wine
 
 
 def train(param, result_dir):
@@ -27,6 +28,11 @@ def train(param, result_dir):
     df = pd.read_csv(f'{train_file}')
     df_test = pd.read_csv(f'{test_file}')
 
+    # ワインデータセットの読み込み
+    # wine = load_wine()
+    # wine_df = pd.DataFrame(wine.data, columns=wine.feature_names)
+    # wine_class = pd.DataFrame(wine.target, columns=['class'])
+
     # データの確認
     print(df.shape)  # データサイズの確認(データ数, 特徴量数)
     display(df)  # df.head()に同じ(文中に入れるときはdisplay()を使う)
@@ -34,34 +40,43 @@ def train(param, result_dir):
     # 説明変数,目的変数
     x = df.drop('target', axis=1).values  # 説明変数(target以外の特徴量)
     y = df['target'].values  # 目的変数(target)
-    t = df_test
+    if model_param == 'gbm':
+        t = df_test
+    else:
+        t = df_test.values
+
+    # wine_cat = pd.concat([wine_df, wine_class], axis=1)
+    # wine_cat.drop(wine_cat[wine_cat['class'] == 2].index, inplace=True)
+    # wine_data = wine_cat.values[:, :13]
+    # wine_target = wine_cat.values[:, 13]
 
     # トレーニングデータ,テストデータの分割
-    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.20, random_state=0)
+    x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.20)
+    # x_train, x_valid, y_train, y_valid = train_test_split(wine_data, wine_target, test_size=0.25)
 
     # クラスの比率
     n_target0, n_target1 = len(df[df['target'] == 0]), len(df[df['target'] == 1])
     n_all = n_target0 + n_target1
-    print('target0 の割合 :', n_target0/n_all)  # target0(3位以下)の割合
-    print('target1 の割合 :', n_target1/n_all)  # target1(2位以内)の割合
+    print('target0 の割合 :', n_target0/n_all)  # target0(4位以下)の割合
+    print('target1 の割合 :', n_target1/n_all)  # target1(3位以内)の割合
 
     # 学習に使用するデータを設定
     if model_param == 'gbm':
         lgb_train = lgb.Dataset(x_train, y_train)
         lgb_eval = lgb.Dataset(x_valid, y_valid, reference=lgb_train)
     else:
-        x_train = torch.from_numpy(x_train).float()
-        y_train = torch.from_numpy(y_train).long()
-        x_valid = torch.from_numpy(x_valid).float()
-        y_valid = torch.from_numpy(y_valid).long()
-        t = torch.from_numpy(t.values).float()
+        x_train = torch.FloatTensor(x_train)
+        y_train = torch.LongTensor(y_train)
+        x_valid = torch.FloatTensor(x_valid)
+        y_valid = torch.LongTensor(y_valid)
+        t = torch.FloatTensor(t)
         train_tensor = TensorDataset(x_train, y_train)
         valid_tensor = TensorDataset(x_valid, y_valid)
 
-        train_dataloader = DataLoader(train_tensor, batch_size=1024, shuffle=True)
-        valid_dataloader = DataLoader(valid_tensor, batch_size=1024, shuffle=True)
+        train_dataloader = DataLoader(train_tensor, batch_size=4096, shuffle=True)  # 2048
+        valid_dataloader = DataLoader(valid_tensor, batch_size=4096, shuffle=False)  # 2048
 
-        model = Ann(input_dim=26).to(device)
+        model = Ann(input_dim=23).to(device)  # 26
         criterion = nn.CrossEntropyLoss()
         optimizer = SGD(model.parameters(), lr=0.01)
 
@@ -95,13 +110,13 @@ def train(param, result_dir):
             model.load_state_dict(torch.load(f'{load_dir}lstm.nn', map_location=device))  # モデルを読み込み
         else:
             # モデルの学習(ANN)
-            epoch_num = 1000
+            epoch_num = 100
             loss_list = []
             loss_test_list = []
             for epoch in range(epoch_num):
                 total_loss = 0
                 for train_x, train_y in train_dataloader:
-                    train_x, train_y = Variable(train_x).to(device), Variable(train_y).to(device)
+                    train_x, train_y = train_x.to(device), train_y.to(device)
                     optimizer.zero_grad()
                     output = model(train_x)
                     loss = criterion(output, train_y)
@@ -118,7 +133,7 @@ def train(param, result_dir):
                         loss = criterion(output, valid_y)
                         total_test_loss += loss.item()
 
-                print('epoch: ', epoch + 1, 'train_loss: ', total_loss, 'valid_loss: ', total_test_loss)
+                print('epoch:', epoch + 1, ', train_loss:', total_loss, ', valid_loss: ', total_test_loss)
                 loss_list.append(total_loss)
                 loss_test_list.append(total_test_loss)
             torch.save(model.state_dict(), f'{result_dir}lstm.nn')
@@ -207,18 +222,18 @@ def train(param, result_dir):
 
     else:
         # モデル評価
-        x_valid, y_valid = Variable(x_valid).to(device), Variable(y_valid).to(device)
-        result = torch.max(model(x_valid).data, 1)[1]
+        x_valid, y_valid = x_valid.to(device), y_valid.to(device)
+        result = torch.max(model(x_valid).detach(), 1)[1]
         y_valid = y_valid.to('cpu').detach().numpy().copy()
         result = result.to('cpu').detach().numpy().copy()
         acc = sum(y_valid == np.array(result, dtype='float64')) / len(y_valid)
         print('Acc :', acc)
 
         # テストデータの予測値の表示
-        t = Variable(t).to(device)
+        t = t.to(device)
 
         # テストデータのクラス予測確率
-        t_pred = model(t)
+        t_pred = model(t, test=True).detach()
         t_pred = t_pred.to('cpu').detach().numpy().copy()
         t_pred_0 = t_pred.T[0]
         t_pred_1 = t_pred.T[1]
