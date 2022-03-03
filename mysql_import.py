@@ -2,7 +2,7 @@ import pymysql.cursors
 from datetime import date
 from utils import date_range
 
-def main():
+def sql_import():
     connection = pymysql.connect(
         user='kkuriyama',
         passwd='kuitan812',
@@ -12,9 +12,11 @@ def main():
     )
     cursor = connection.cursor()
 
-    # 実行したいコード
-    SQL = 'use my_keiba_db;'
-    cursor.execute(SQL)
+    # データベースを選択
+    # SQL = """
+    #       use my_keiba_db;
+    #       """
+    # cursor.execute(SQL)
 
     # table自体を削除
     # SQL = 'DROP TABLE race_table'
@@ -79,5 +81,5 @@ def main():
     connection.close()
 
 if __name__ == '__main__':
-    main()
+    sql_import()
 

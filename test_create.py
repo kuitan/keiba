@@ -23,7 +23,7 @@ def create_csv():
     horse_list.append([8, 16, 'ワールドウインズ', 'セ5', 56.0, '田中勝春', 13, 88.6, '502(0)', '[西] 武幸四郎', '芝右1800m', '晴', '良', 'G2'])
 
 
-    columns = ['枠番', '馬番', '馬名', '性齢', '斤量', '騎手', '人気', '単勝', '馬体重', '調教師', 'レース名', '天候', '芝状態', 'レース種類']
+    columns = ['frame_num', 'horse_num', 'horse_name', 'sex_age', 'weight_to_carry', 'jockey', 'popular', 'win', 'horse_weight', 'trainer', 'race_name', 'weather', 'race_cond', 'race_type']
     df = pd.DataFrame(horse_list, columns=columns)
 
     print(df)

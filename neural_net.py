@@ -36,7 +36,7 @@ class Ann(nn.Module):
 
     def forward(self, inputs, test=False):
         output = self.model(inputs)
-        if test == True:
+        if test:
             output = F.softmax(output, dim=1)
         return output
 
