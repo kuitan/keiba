@@ -55,8 +55,6 @@ def preprocess():
     del df['time_difference']
     del df['start_time']
 
-    # print(df.head())
-
     result_dir = './result/'  # 結果を出力するディレクトリ名
     horse_idx = 0
     jockey_idx = 0

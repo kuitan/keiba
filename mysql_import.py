@@ -52,7 +52,7 @@ def sql_import():
 
     # csvからインポート
     # result_dir = '/home/kkuriyama/keiba/result/'
-    # for d in date_range(date(2011, 1, 1), date(2022, 2, 25)):
+    # for d in date_range(date(2022, 2, 26), date(2022, 3, 4)):
     #     # dateを使った処理
     #     d = d.strftime("%Y%m%d")
     #     try:
