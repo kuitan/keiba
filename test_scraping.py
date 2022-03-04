@@ -18,6 +18,7 @@ def get_test_data(url):
     chrome_service = service.Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=chrome_service, options=options)
 
+    # 検索
     driver.get(url)
     time.sleep(1)
 
@@ -30,6 +31,16 @@ def get_test_data(url):
 
     df = pd.read_html(source_code, match='馬名')[0]  # Tableを抽出
     df.columns = df.columns.droplevel(0)  # headerのMultiIndexを解除
+
+    # レース情報を取得
+    soup = BeautifulSoup(source_code, "html.parser")
+    race_origin = soup.select_one('div.RaceData01')
+    race_name = race_origin.select_one('span').contents[0].replace(' ', '')
+    race_name_other = re.split('[()]', race_origin.contents[3].split('/')[0].replace(' ', ''))[1][0]
+    race_name = race_name[0] + race_name_other + race_name[1:]  # レース名
+    race_weather = race_origin.contents[3].split('/')[1].split(':')[1]  # 天候
+    race_cond = race_origin.select_one('span[class="Item03"]').contents[0].split(':')[1]  # レースの状態
+    race_type = re.split('[()]', soup.title.contents[0])[1]  # レースの種類
 
     # 騎手のリストを取得
     soup = BeautifulSoup(source_code, "html.parser")
@@ -74,12 +85,20 @@ def get_test_data(url):
     # ヘッダーを変更，並び替え
     df = df.rename(columns={'枠': 'frame_num', '馬番': 'horse_num', '馬名': 'horse_name', '性齢': 'sex_age',
                             '斤量': 'weight_to_carry', '騎手': 'jockey', '厩舎': 'trainer',
-                            '馬体重(増減)': 'horse_weight', '予想オッズ': 'win', '人気': 'popular'})
+                            '馬体重(増減)': 'horse_weight', 'オッズ 更新': 'win', '人気': 'popular'})
     df = df.reindex(columns=['frame_num', 'horse_num', 'horse_name', 'sex_age', 'weight_to_carry', 'jockey', 'popular',
                              'win', 'horse_weight', 'trainer'])
 
     df['jockey'] = jockey_list
     df['trainer'] = trainer_list
+    df['horse_weight'] = '502(0)'  # 馬体重を使わない場合
+
+    # レース名，天候，レース状態を追加
+    df['race_name'] = race_name
+    df['weather'] = race_weather
+    df['race_cond'] = race_cond
+    df['race_type'] = race_type
+
     print(df.head())
 
     # ブラウザを閉じる
