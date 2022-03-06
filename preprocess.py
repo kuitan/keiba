@@ -266,8 +266,8 @@ def preprocess():
 
     bar.update(10)
 
-    del df['horse_weight']
-    del df['horse_weight_difference']
+    # del df['horse_weight']
+    # del df['horse_weight_difference']
 
     # テストデータと訓練データを分割
     train_df = df.query('order_of_arrival != "test"')

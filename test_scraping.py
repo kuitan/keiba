@@ -91,7 +91,7 @@ def get_test_data(url):
 
     df['jockey'] = jockey_list
     df['trainer'] = trainer_list
-    df['horse_weight'] = '502(0)'  # 馬体重を使わない場合
+    # df['horse_weight'] = '502(0)'  # 馬体重を使わない場合
 
     # レース名，天候，レース状態を追加
     df['race_name'] = race_name
@@ -109,5 +109,5 @@ def get_test_data(url):
 
 
 if __name__ == '__main__':
-    url = 'https://race.netkeiba.com/race/shutuba.html?race_id=202209010711&rf=race_submenu'
+    url = 'https://race.netkeiba.com/race/shutuba.html?race_id=202206020411&rf=race_submenu'
     get_test_data(url)

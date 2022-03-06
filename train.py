@@ -241,5 +241,6 @@ def train(param, result_dir):
         df_pred_prob = pd.DataFrame({'target0_prob': t_pred_0, 'target1_prob': t_pred_1})
         idx = np.arange(1, len(df_pred_prob) + 1)
         df_pred_prob['horse_num'] = idx  # 馬番を追加
+        df_pred_prob['win'] = df_test['win']
         df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
         print(df_s)
