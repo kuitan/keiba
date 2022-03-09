@@ -277,6 +277,10 @@ def preprocess():
     train_df.insert(0, 'target', train_df['order_of_arrival'].astype('int').apply(lambda x: 1 if x <= 3 else 0))
     del train_df['order_of_arrival']
     del test_df['order_of_arrival']
+    
+    # オッズを削除
+    del train_df['win']
+    del test_df['win']
 
     # floatに変換
     # train_df = train_df.astype('float64')

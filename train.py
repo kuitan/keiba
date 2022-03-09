@@ -27,6 +27,7 @@ def train(param, result_dir):
     # keibaデータセットの読み込み
     df = pd.read_csv(f'{train_file}')
     df_test = pd.read_csv(f'{test_file}')
+    df_test_win = pd.read_csv('./result/test.csv')
 
     # ワインデータセットの読み込み
     # wine = load_wine()
@@ -220,6 +221,16 @@ def train(param, result_dir):
         del df_s['target0_prob']
         print(df_s)
 
+        # df_pred_prob['win'] = -df_test_win['win'] + df_test_win['win'].max()  # 割合を計算
+        # df_pred_prob['target1_prob'] = df_pred_prob['target1_prob'] / df_pred_prob['target1_prob'].sum()  # 割合を計算
+        # df_pred_prob['win'] = df_pred_prob['win'] / df_pred_prob['win'].sum()  # 割合を計算
+        # df_pred_prob['exp'] = df_pred_prob['target1_prob'] - df_pred_prob['win']  # 期待値を計算
+        # df_s = df_pred_prob.sort_values('exp', ascending=False)
+        # del df_s['target0_prob']
+        # del df_s['target1_prob']
+        # del df_s['win']
+        # print(df_s)
+
     else:
         # モデル評価
         x_valid, y_valid = x_valid.to(device), y_valid.to(device)
@@ -241,6 +252,5 @@ def train(param, result_dir):
         df_pred_prob = pd.DataFrame({'target0_prob': t_pred_0, 'target1_prob': t_pred_1})
         idx = np.arange(1, len(df_pred_prob) + 1)
         df_pred_prob['horse_num'] = idx  # 馬番を追加
-        df_pred_prob['win'] = df_test['win']
         df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
         print(df_s)
