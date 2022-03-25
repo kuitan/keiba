@@ -10,7 +10,7 @@ from utils import date_range
 def get_data(url, proxies):
     result_dir = './result/'  # 結果を出力するディレクトリ名
 
-    for d in date_range(date(2011, 1, 1), date(2022, 3, 9)):
+    for d in date_range(date(2011, 1, 1), date(2022, 3, 23)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
@@ -72,7 +72,16 @@ def get_data(url, proxies):
                 df.insert(8, 'jockey_id', jockey_id_list)
                 df.insert(15, 'trainer_id', trainer_id_list)
 
+                # 日付を追加
+                df['date'] = d
+
+                # 払い戻しを取得
+                df_pay = pd.read_html(res.content, match='三連複')[0]  # Tableを抽出
+                df['三連複'] = df_pay.iat[2, 1]
+                df['払い戻し'] = df_pay.iat[2, 2]
+
                 print(df)
+                # print(df_pay)
 
                 if i == 0:
                     df1 = df

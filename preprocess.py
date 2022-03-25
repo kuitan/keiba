@@ -1,6 +1,5 @@
 import pymysql.cursors
 import pandas as pd
-import numpy as np
 import re
 from tqdm import tqdm
 
@@ -41,6 +40,15 @@ def get_sql():
     return df
 
 
+def label_encoder(df, columns):
+    for col in columns:
+        df[col] = df[col].astype('category')
+        df.insert(0, col+'_enc', df[col].cat.codes)
+        del df[col]
+
+    return df
+
+
 def preprocess():
     # progress barを設定
     bar = tqdm(total=100)
@@ -56,12 +64,6 @@ def preprocess():
     del df['start_time']
 
     result_dir = './result/'  # 結果を出力するディレクトリ名
-    horse_idx = 0
-    jockey_idx = 0
-    trainer_idx = 0
-    horse_dic = {}
-    jockey_dic = {}
-    trainer_dic = {}
 
     # 欠損値を除外
     df = df.dropna()
@@ -76,25 +78,8 @@ def preprocess():
     test_df.insert(0, 'order_of_arrival', 'test')
     df = pd.concat([df, test_df])
 
-    # 辞書を作成
-    for horse_key, jockey_key, trainer_key in zip(df['horse_name'], df['jockey'], df['trainer']):
-        if horse_key in horse_dic.keys():
-            pass
-        else:
-            horse_dic[horse_key] = horse_idx
-            horse_idx += 1
-
-        if jockey_key in jockey_dic.keys():
-            pass
-        else:
-            jockey_dic[jockey_key] = jockey_idx
-            jockey_idx += 1
-
-        if trainer_key in trainer_dic.keys():
-            pass
-        else:
-            trainer_dic[trainer_key] = trainer_idx
-            trainer_idx += 1
+    # Label Encoding
+    df = label_encoder(df, columns=['trainer_id', 'jockey_id', 'horse_id'])
 
     bar.update(10)
 
@@ -234,18 +219,6 @@ def preprocess():
     df = pd.concat([df, pd.get_dummies(df['race_title'], drop_first=True)], axis=1)
     del df['race_title']
 
-    # 調教師のidを追加
-    df.insert(0, 'trainer_id', df['trainer'].apply(lambda x: trainer_dic[x]))
-    del df['trainer']
-
-    # 騎手のidを追加
-    df.insert(0, 'jockey_id', df['jockey'].apply(lambda x: jockey_dic[x]))
-    del df['jockey']
-
-    # 馬名のidを追加
-    df.insert(0, 'horse_id', df['horse_name'].apply(lambda x: horse_dic[x]))
-    del df['horse_name']
-
     bar.update(10)
 
     # 欠損値を除外
@@ -254,6 +227,9 @@ def preprocess():
     # 不要な属性を削除
     del df['horse_num']
     del df['popular']
+    del df['horse_name']
+    del df['jockey']
+    del df['trainer']
 
     # 標準化
     df['age'] = df['age'].astype('float64')
@@ -266,6 +242,7 @@ def preprocess():
 
     bar.update(10)
 
+    # 馬体重を削除
     # del df['horse_weight']
     # del df['horse_weight_difference']
 
@@ -281,10 +258,6 @@ def preprocess():
     # オッズを削除
     del train_df['win']
     del test_df['win']
-
-    # floatに変換
-    # train_df = train_df.astype('float64')
-    # test_df = test_df.astype('float64')
 
     bar.update(10)
 
