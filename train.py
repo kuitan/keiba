@@ -13,6 +13,7 @@ import torch.nn as nn
 from torch.optim import SGD
 from torch.autograd import Variable
 from utils import get_device
+import itertools
 from sklearn.datasets import load_wine
 
 
@@ -221,16 +222,34 @@ def train(param, result_dir):
         del df_s['target0_prob']
         print(df_s)
 
-        # df_pred_prob['win'] = -df_test_win['win'] + df_test_win['win'].max()  # 割合を計算
-        # df_pred_prob['target1_prob'] = df_pred_prob['target1_prob'] / df_pred_prob['target1_prob'].sum()  # 割合を計算
-        # df_pred_prob['win'] = df_pred_prob['win'] / df_pred_prob['win'].sum()  # 割合を計算
-        # df_pred_prob['exp'] = df_pred_prob['target1_prob'] - df_pred_prob['win']  # 期待値を計算
-        # df_s = df_pred_prob.sort_values('exp', ascending=False)
-        # del df_s['target0_prob']
-        # del df_s['target1_prob']
-        # del df_s['win']
-        # print(df_s)
+        # 買い目の馬を返す
+        # 上位3つの三連複を買う場合
+        bet_top_list = df_s[:3]['horse_num'].values.tolist()
+        print(bet_top_list)
 
+        # 上位5つの三連複をボックスで買う場合
+        triple_list = df_s[:5]['horse_num'].values.tolist()
+        bet_box_list = [list(bet) for bet in itertools.combinations(triple_list, 3)]
+        print(bet_box_list)
+
+        # 上位5つの三連複をフォーメーションで買う場合
+        triple_list = df_s[:3]['horse_num'].values.tolist()
+        bet_list_head = [list(bet) for bet in itertools.combinations(triple_list, 2)]
+        triple_list = df_s[3:5]['horse_num'].values.tolist()
+        bet_form_list = []
+        for bet_list in bet_list_head:
+            bet_list1 = []
+            bet_list2 = []
+            for bet in bet_list:
+                bet_list1.append(bet)
+                bet_list2.append(bet)
+            bet_list1.append(triple_list[0])
+            bet_list2.append(triple_list[1])
+            bet_form_list.append(bet_list1)
+            bet_form_list.append(bet_list2)
+        print(bet_form_list)
+
+        return bet_top_list, bet_box_list, bet_form_list
     else:
         # モデル評価
         x_valid, y_valid = x_valid.to(device), y_valid.to(device)

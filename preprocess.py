@@ -4,7 +4,7 @@ import re
 from tqdm import tqdm
 
 
-def get_sql():
+def get_sql(date, later=False, race=None):
     '''
     MySQLからデータを抽出し，DataFrameで出力する関数
     :return: df
@@ -29,10 +29,24 @@ def get_sql():
     for column in cursor.fetchall():
         columns_list.append(column[0])
 
-    # データベースの中身を取得
-    SQL = """
-          SELECT * FROM race_table;
-          """.format(columns=','.join(['`{}`'.format(line) for line in columns_list]))
+    if race is not None:
+        SQL = """
+              SELECT * FROM race_table
+              WHERE race_type = '{}';
+              """.format(race, columns=','.join(['`{}`'.format(line) for line in columns_list]))
+    else:
+        if later:
+            # データベースの中身を取得
+            SQL = """
+                  SELECT * FROM race_table
+                  WHERE date > {};
+                  """.format(date, columns=','.join(['`{}`'.format(line) for line in columns_list]))
+        else:
+            # データベースの中身を取得
+            SQL = """
+                  SELECT * FROM race_table
+                  WHERE date < {};
+                  """.format(date, columns=','.join(['`{}`'.format(line) for line in columns_list]))
     cursor.execute(SQL)
 
     df = pd.read_sql(SQL, connection)
@@ -49,19 +63,22 @@ def label_encoder(df, columns):
     return df
 
 
-def preprocess():
+def preprocess(date, race=None):
     # progress barを設定
     bar = tqdm(total=100)
     bar.set_description('Progress rate')
 
     pd.set_option('display.max_columns', 100)
 
-    df = get_sql()
+    df = get_sql(date)
 
     # 不要な属性を削除
     del df['time']
     del df['time_difference']
     del df['start_time']
+    del df['date']
+    del df['triple']
+    del df['refund']
 
     result_dir = './result/'  # 結果を出力するディレクトリ名
 
@@ -74,9 +91,23 @@ def preprocess():
     df = df[df['order_of_arrival'] != '除']
 
     # テストデータの読み込みと結合
-    test_df = pd.read_csv(f'{result_dir}test.csv')
-    test_df.insert(0, 'order_of_arrival', 'test')
-    df = pd.concat([df, test_df])
+    if race is not None:
+        test_df = get_sql(date, race=race)
+        triple = test_df['triple'].iat[0]
+        refund = test_df['refund'].iat[0]
+        del test_df['order_of_arrival']
+        del test_df['time']
+        del test_df['time_difference']
+        del test_df['start_time']
+        del test_df['date']
+        del test_df['triple']
+        del test_df['refund']
+        test_df.insert(0, 'order_of_arrival', 'test')
+        df = pd.concat([df, test_df])
+    else:
+        test_df = pd.read_csv(f'{result_dir}test.csv')
+        test_df.insert(0, 'order_of_arrival', 'test')
+        df = pd.concat([df, test_df])
 
     # Label Encoding
     df = label_encoder(df, columns=['trainer_id', 'jockey_id', 'horse_id'])
@@ -270,6 +301,84 @@ def preprocess():
     train_df.to_csv(f'./data/preprocess.csv', index=False)
     test_df.to_csv(f'./data/test_preprocess.csv', index=False)
 
+    # 三連複の払い戻し
+    if race is not None:
+        triple_list = triple.replace(' - ', ' ').split(' ')
+        triple_list = list(map(int, triple_list))
+
+    return triple_list, refund
+
+
+def get_race_list(date):
+    pd.set_option('display.max_columns', 100)
+
+    df = get_sql(date, later=True)
+    # 欠損値を除外
+    df = df.dropna()
+
+    # レース種類からG1,2,3,L,その他を分類
+    name_list = []
+    for rank, name in zip(df['order_of_arrival'], df['race_type']):
+        if rank == 'test':
+            name_list.append(name)
+        else:
+            if re.compile('G\d').search(name):
+                name_list.append(re.findall('G\d', name)[0])
+            elif re.compile('L').search(name):
+                name_list.append('L')
+            else:
+                name_list.append('other_races')
+    df['race_title'] = name_list
+
+    # レース種類のone-hot encoding
+    categories = {'G1', 'G2', 'G3', 'L', 'other_races'}
+    df['race_title'] = pd.Categorical(df['race_title'], categories=categories)
+    df = pd.concat([df, pd.get_dummies(df['race_title'])], axis=1)
+
+    df = df.query('G1 == 1 or G2 == 1 or G3 == 1')
+
+    categories = set(df['race_type'].unique().tolist())
+    # print(categories)
+
+    return categories
+
+
+def get_race_date(race):
+    connection = pymysql.connect(
+        user='kkuriyama',
+        passwd='kuitan812',
+        host='localhost',  # 接続先DBのホスト名或いはIPに書き換えてください。
+        db='my_keiba_db',
+        local_infile=1  # csvインポートを許可
+    )
+    cursor = connection.cursor()
+
+    # ヘッダーを取得
+    SQL = """
+          DESCRIBE race_table;
+          """
+    cursor.execute(SQL)
+
+    columns_list = []
+    for column in cursor.fetchall():
+        columns_list.append(column[0])
+
+    # データベースの中身を取得
+    SQL = """
+          SELECT * FROM race_table
+          WHERE race_type = '{}';
+          """.format(race, columns=','.join(['`{}`'.format(line) for line in columns_list]))
+    cursor.execute(SQL)
+
+    df = pd.read_sql(SQL, connection)
+
+    # 日付を取得
+    date = df['date'].iat[0]
+    # print(date)
+
+    return date
+
 
 if __name__ == '__main__':
-    preprocess()
+    date = '20220325'  # 今日の日付
+    preprocess(date)
