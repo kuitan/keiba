@@ -17,13 +17,14 @@ import itertools
 from sklearn.datasets import load_wine
 
 
-def train(param, result_dir):
+def train(param):
     device = get_device()  # デバイスを取得
 
     train_file = param['train_file']
     test_file = param['test_file']
     model_param = param['model']
     load_dir = param['load']
+    result_dir = param['result_dir']
 
     # keibaデータセットの読み込み
     df = pd.read_csv(f'{train_file}')

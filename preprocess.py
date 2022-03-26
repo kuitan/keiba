@@ -63,12 +63,16 @@ def label_encoder(df, columns):
     return df
 
 
-def preprocess(date, race=None):
+def preprocess(param, date, race=None):
     # progress barを設定
     bar = tqdm(total=100)
     bar.set_description('Progress rate')
 
     pd.set_option('display.max_columns', 100)
+
+    train_file = param['train_file']
+    test_file = param['test_file']
+    result_dir = param['result_dir']
 
     df = get_sql(date)
 
@@ -79,8 +83,6 @@ def preprocess(date, race=None):
     del df['date']
     del df['triple']
     del df['refund']
-
-    result_dir = './result/'  # 結果を出力するディレクトリ名
 
     # 欠損値を除外
     df = df.dropna()
@@ -306,8 +308,8 @@ def preprocess(date, race=None):
     print(test_df.head())
 
     # csvで出力
-    train_df.to_csv(f'./data/preprocess.csv', index=False)
-    test_df.to_csv(f'./data/test_preprocess.csv', index=False)
+    train_df.to_csv(train_file, index=False)
+    test_df.to_csv(test_file, index=False)
 
     # 三連複の払い戻し
     if race is not None:

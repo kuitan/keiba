@@ -13,6 +13,11 @@ def main():
     result_dir = './result/' + timestamp + '/'  # 結果を出力するディレクトリ名
     os.mkdir(result_dir)  # 結果を出力するディレクトリを作成
     param = vars(args)  # コマンドライン引数を取り込み
+    param.update({
+        'train_file': f'{result_dir}preprocess.csv',
+        'test_file': f'{result_dir}test_preprocess.csv',
+        'result_dir': result_dir
+    })  # 追加パラメータ
 
     # メインレースのリストを取得
     # 指定した日付以降のレースリストを作成(G1~G3)
@@ -31,11 +36,11 @@ def main():
         d = get_race_date(race)
         d = d.strftime("%Y%m%d")
         # 前処理
-        triple, refund = preprocess(d, race=race)
+        triple, refund = preprocess(param, d, race=race)
         # テストデータが空でない場合
         if triple is not None:
             # modelの学習
-            bet_top_list, bet_box_list, bet_form_list = train(param, result_dir)
+            bet_top_list, bet_box_list, bet_form_list = train(param)
             # 馬券を買って的中しているか判定
             top_money, top_refund, box_money, box_refund, form_money, form_refund \
                 = bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list)
@@ -66,8 +71,6 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-train', '--train_file', type=str, default='./data/preprocess.csv')
-    parser.add_argument('-test', '--test_file', type=str, default='./data/test_preprocess.csv')
     parser.add_argument('-m', '--model', type=str, default='gbm')
     parser.add_argument('-l', '--load', type=str, default=None)
     args = parser.parse_args()  # 引数解析

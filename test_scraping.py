@@ -10,8 +10,9 @@ from webdriver_manager.chrome import ChromeDriverManager
 import numpy as np
 
 
-def get_test_data(url):
-    result_dir = './result/'  # 結果を出力するディレクトリ名
+def get_test_data(param):
+    result_dir = param['result_dir']
+    url = param['test_url']
 
     # ブラウザを起動
     options = Options()
