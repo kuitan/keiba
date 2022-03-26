@@ -28,7 +28,6 @@ def train(param, result_dir):
     # keibaデータセットの読み込み
     df = pd.read_csv(f'{train_file}')
     df_test = pd.read_csv(f'{test_file}')
-    df_test_win = pd.read_csv('./result/test.csv')
 
     # ワインデータセットの読み込み
     # wine = load_wine()

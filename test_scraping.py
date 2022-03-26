@@ -145,5 +145,5 @@ def get_test_data(url):
 
 
 if __name__ == '__main__':
-    url = 'https://race.netkeiba.com/race/shutuba.html?race_id=202206020811&rf=race_submenu'
+    url = 'https://race.netkeiba.com/race/shutuba.html?race_id=202206030111&rf=race_submenu'
     get_test_data(url)

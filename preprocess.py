@@ -93,6 +93,11 @@ def preprocess(date, race=None):
     # テストデータの読み込みと結合
     if race is not None:
         test_df = get_sql(date, race=race)
+        # テストデータが空の時
+        if df.empty:
+            triple_list = None
+            refund = None
+            return triple_list, refund
         triple = test_df['triple'].iat[0]
         refund = test_df['refund'].iat[0]
         del test_df['order_of_arrival']
@@ -166,10 +171,10 @@ def preprocess(date, race=None):
     field = []
     length = []
     race_type = []
-    for race in df['race_name']:
-        field.append(race[:1])
-        length_list = re.split('[^0-9]', race)
-        race_type_list = re.split('[0-9]', race)
+    for race_name in df['race_name']:
+        field.append(race_name[:1])
+        length_list = re.split('[^0-9]', race_name)
+        race_type_list = re.split('[0-9]', race_name)
         race_type_list = race_type_list[0].split()
         race_type.append(race_type_list[0][1:])
         count = 0
@@ -178,7 +183,10 @@ def preprocess(date, race=None):
             if length_list[count] != '':
                 tmp_list.append(length_list[count])
             count += 1
-        length.append(tmp_list[0])
+        if '2周' in race_name:
+            length.append(tmp_list[1])
+        else:
+            length.append(tmp_list[0])
     del df['race_name']
     df['field'] = field
     df['type'] = race_type
@@ -305,6 +313,9 @@ def preprocess(date, race=None):
     if race is not None:
         triple_list = triple.replace(' - ', ' ').split(' ')
         triple_list = list(map(int, triple_list))
+    else:
+        triple_list = None
+        refund = None
 
     return triple_list, refund
 

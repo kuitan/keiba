@@ -26,35 +26,39 @@ def main():
     box_wallet_list = []
     form_wallet_list = []
 
-    for race in main_race_list:
+    for i, race in enumerate(main_race_list):
         # raceの日付を取得
         d = get_race_date(race)
         d = d.strftime("%Y%m%d")
         # 前処理
         triple, refund = preprocess(d, race=race)
-        # modelの学習
-        bet_top_list, bet_box_list, bet_form_list = train(param, result_dir)
-        # 馬券を買って的中しているか判定
-        top_money, top_refund, box_money, box_refund, form_money, form_refund \
-            = bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list)
-        # 所持金を計算
-        top_wallet = top_wallet - top_money + top_refund
-        top_wallet_list.append(top_wallet)
-        print(f'所持金: {top_wallet}円')
-        box_wallet = box_wallet - box_money + box_refund
-        box_wallet_list.append(box_wallet)
-        print(f'所持金: {box_wallet}円')
-        form_wallet = form_wallet - form_money + form_refund
-        form_wallet_list.append(form_wallet)
-        print(f'所持金: {form_wallet}円')
+        # テストデータが空でない場合
+        if triple is not None:
+            # modelの学習
+            bet_top_list, bet_box_list, bet_form_list = train(param, result_dir)
+            # 馬券を買って的中しているか判定
+            top_money, top_refund, box_money, box_refund, form_money, form_refund \
+                = bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list)
+            # 所持金を計算
+            top_wallet = top_wallet - top_money + top_refund
+            top_wallet_list.append(top_wallet)
+            print(f'所持金: {top_wallet}円: 上位3つの三連複を買う場合')
+            box_wallet = box_wallet - box_money + box_refund
+            box_wallet_list.append(box_wallet)
+            print(f'所持金: {box_wallet}円: 上位5つの三連複をボックスで買う場合')
+            form_wallet = form_wallet - form_money + form_refund
+            form_wallet_list.append(form_wallet)
+            print(f'所持金: {form_wallet}円: 上位5つの三連複をフォーメーションで買う場合')
+
+        print(f'{i+1} / {len(main_race_list)}')
 
     # 可視化
     plt.figure()
-    plt.plot(np.arange(top_wallet_list), top_wallet_list, label='上位3つの三連複')
-    plt.plot(np.arange(box_wallet_list), box_wallet_list, label='上位5つの三連複ボックス')
-    plt.plot(np.arange(form_wallet_list), form_wallet_list, label='上位5つの三連複フォーメーション')
-    plt.xlabel('レース数')
-    plt.ylabel('所持金(円)')
+    plt.plot(np.arange(len(top_wallet_list)), top_wallet_list, label='top_triple')
+    plt.plot(np.arange(len(box_wallet_list)), box_wallet_list, label='box_triple')
+    plt.plot(np.arange(len(form_wallet_list)), form_wallet_list, label='form_triple')
+    plt.xlabel('race num')
+    plt.ylabel('wallet [yen]')
     plt.legend()
     plt.savefig(f'{result_dir}wallet.png')
     plt.close()

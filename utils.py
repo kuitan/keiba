@@ -82,7 +82,7 @@ def bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list):
     if box_hit:
         box_refund = refund
 
-    # 上位5つの三連複をボックスで買う場合
+    # 上位5つの三連複をフォーメーションで買う場合
     # 収出
     form_hit = False
     form_money = len(bet_form_list) * 100
