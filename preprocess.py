@@ -349,6 +349,7 @@ def get_race_list(date):
     df = pd.concat([df, pd.get_dummies(df['race_title'])], axis=1)
 
     df = df.query('G1 == 1 or G2 == 1 or G3 == 1')
+    # df = df.query('G1 == 1')
 
     categories = set(df['race_type'].unique().tolist())
     # print(categories)

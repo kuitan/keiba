@@ -8,9 +8,9 @@ from utils import date_range
 
 
 def get_data(url, proxies):
-    result_dir = './result/'  # 結果を出力するディレクトリ名
+    result_dir = './data/'  # 結果を出力するディレクトリ名
 
-    for d in date_range(date(2011, 1, 1), date(2022, 3, 23)):
+    for d in date_range(date(2011, 1, 1), date(2022, 3, 29)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
@@ -41,21 +41,21 @@ def get_data(url, proxies):
                 [horse_id_list.append(horse_url.attrs['href'].split('/')[2]) for horse_url in horse_list]
 
                 # jockey_idを取得
-                jockey_list = race_table.find_all('a', href=re.compile('/jockey/[0-90-9]+'))
+                jockey_list = race_table.find_all('a', href=re.compile('/jockey/result/recent/[0-90-9]+'))
                 jockey_id_list = []
                 [jockey_id_list.append(jockey_url.attrs['href'].split('/')[2]) for jockey_url in jockey_list]
 
                 # trainer_idを取得
-                trainer_list = race_table.find_all('a', href=re.compile('/trainer/[0-90-9]+'))
+                trainer_list = race_table.find_all('a', href=re.compile('/trainer/result/recent/[0-90-9]+'))
                 trainer_id_list = []
                 [trainer_id_list.append(trainer_url.attrs['href'].split('/')[2]) for trainer_url in trainer_list]
 
-                soup = soup.select_one('dl.racedata')
-                race_title = soup.select_one('h1')
+                race_title_soup = soup.select_one('dl.racedata')
+                race_title = race_title_soup.select_one('h1')
                 race_title = race_title.contents[0]
                 df['レース種類'] = race_title
 
-                race_cond = soup.select_one('span')
+                race_cond = race_title_soup.select_one('span')
                 race_cond = race_cond.contents[0].split('/')
                 df['レース名'] = race_cond[0]
 
@@ -75,13 +75,19 @@ def get_data(url, proxies):
                 # 日付を追加
                 df['date'] = d
 
-                # 払い戻しを取得
+                # 三連複の払い戻しを取得
                 df_pay = pd.read_html(res.content, match='三連複')[0]  # Tableを抽出
                 df['三連複'] = df_pay.iat[2, 1]
-                df['払い戻し'] = df_pay.iat[2, 2]
+                df['三連複払い戻し'] = df_pay.iat[2, 2]
+
+                # ワイドの払い戻しを取得
+                pay_table = soup.select('table[class="pay_table_01"]')[1]
+                wide_rank_table = pay_table.select('tr td')[0].get_text(',　')
+                wide_pay_table = pay_table.select('tr td')[1].get_text(';　').replace(',', '').replace(';', ',')
+                df['ワイド'] = wide_rank_table
+                df['ワイド払い戻し'] = wide_pay_table
 
                 print(df)
-                # print(df_pay)
 
                 if i == 0:
                     df1 = df
