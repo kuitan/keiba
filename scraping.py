@@ -43,12 +43,12 @@ def get_data(url, proxies):
                 # jockey_idを取得
                 jockey_list = race_table.find_all('a', href=re.compile('/jockey/result/recent/[0-90-9]+'))
                 jockey_id_list = []
-                [jockey_id_list.append(jockey_url.attrs['href'].split('/')[2]) for jockey_url in jockey_list]
+                [jockey_id_list.append(jockey_url.attrs['href'].split('/')[4]) for jockey_url in jockey_list]
 
                 # trainer_idを取得
                 trainer_list = race_table.find_all('a', href=re.compile('/trainer/result/recent/[0-90-9]+'))
                 trainer_id_list = []
-                [trainer_id_list.append(trainer_url.attrs['href'].split('/')[2]) for trainer_url in trainer_list]
+                [trainer_id_list.append(trainer_url.attrs['href'].split('/')[4]) for trainer_url in trainer_list]
 
                 race_title_soup = soup.select_one('dl.racedata')
                 race_title = race_title_soup.select_one('h1')
@@ -84,8 +84,8 @@ def get_data(url, proxies):
                 pay_table = soup.select('table[class="pay_table_01"]')[1]
                 wide_rank_table = pay_table.select('tr td')[0].get_text(',　')
                 wide_pay_table = pay_table.select('tr td')[1].get_text(';　').replace(',', '').replace(';', ',')
-                df['ワイド'] = wide_rank_table
-                df['ワイド払い戻し'] = wide_pay_table
+                df['ワイド'] = wide_rank_table.replace('\u3000', '')
+                df['ワイド払い戻し'] = wide_pay_table.replace('\u3000', '')
 
                 print(df)
 

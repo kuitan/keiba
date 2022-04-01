@@ -52,13 +52,15 @@ def sql_import():
           start_time varchar(15) NOT NULL,
           date date NOT NULL,
           triple varchar(15) NOT NULL,
-          refund int NOT NULL);
+          triple_refund int NOT NULL,
+          wide varchar(30) NOT NULL,
+          wide_refund varchar(15) NOT NULL);
           """
     cursor.execute(SQL)
 
     # csvからインポート
-    result_dir = '/home/kkuriyama/keiba/result/'
-    for d in date_range(date(2011, 1, 1), date(2022, 3, 23)):
+    result_dir = '/home/kkuriyama/keiba/data/'
+    for d in date_range(date(2011, 1, 1), date(2022, 3, 29)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
         try:
