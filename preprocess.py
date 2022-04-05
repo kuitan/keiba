@@ -322,15 +322,12 @@ def preprocess(param, date, race=None):
 
     # 三連複, ワイドの払い戻し
     if race is not None:
-        triple = triple.replace(' - ', ' ')
-        if '-' in triple:
-            triple = triple.replace('-', ' ')
-        triple_list = triple.split(' ')
+        triple_list = triple.replace(' - ', ' ').split(' ')[:3]
         triple_list = list(map(int, triple_list))
-        wide_list = wide.replace(' - ', ' ').split(',')
+        wide_list = wide.replace(' - ', ' ').split(',')[:3]
         wide_list = [w.split() for w in wide_list]
         wide_list = np.vectorize(int)(wide_list)
-        wide_refund = wide_refund.split(',')
+        wide_refund = wide_refund.split(',')[:3]
         wide_refund = list(map(int, wide_refund))
     else:
         triple_list = None
