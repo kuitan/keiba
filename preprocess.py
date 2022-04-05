@@ -2,6 +2,7 @@ import pymysql.cursors
 import pandas as pd
 import re
 from tqdm import tqdm
+import numpy as np
 
 
 def get_sql(date, later=False, race=None):
@@ -82,7 +83,9 @@ def preprocess(param, date, race=None):
     del df['start_time']
     del df['date']
     del df['triple']
-    del df['refund']
+    del df['triple_refund']
+    del df['wide']
+    del df['wide_refund']
 
     # 欠損値を除外
     df = df.dropna()
@@ -98,17 +101,23 @@ def preprocess(param, date, race=None):
         # テストデータが空の時
         if df.empty:
             triple_list = None
-            refund = None
-            return triple_list, refund
+            triple_refund = None
+            wide_list = None
+            wide_refund = None
+            return triple_list, triple_refund, wide_list, wide_refund
         triple = test_df['triple'].iat[0]
-        refund = test_df['refund'].iat[0]
+        triple_refund = test_df['triple_refund'].iat[0]
+        wide = test_df['wide'].iat[0]
+        wide_refund = test_df['wide_refund'].iat[0]
         del test_df['order_of_arrival']
         del test_df['time']
         del test_df['time_difference']
         del test_df['start_time']
         del test_df['date']
         del test_df['triple']
-        del test_df['refund']
+        del test_df['triple_refund']
+        del test_df['wide']
+        del test_df['wide_refund']
         test_df.insert(0, 'order_of_arrival', 'test')
         df = pd.concat([df, test_df])
     else:
@@ -311,15 +320,25 @@ def preprocess(param, date, race=None):
     train_df.to_csv(train_file, index=False)
     test_df.to_csv(test_file, index=False)
 
-    # 三連複の払い戻し
+    # 三連複, ワイドの払い戻し
     if race is not None:
-        triple_list = triple.replace(' - ', ' ').split(' ')
+        triple = triple.replace(' - ', ' ')
+        if '-' in triple:
+            triple = triple.replace('-', ' ')
+        triple_list = triple.split(' ')
         triple_list = list(map(int, triple_list))
+        wide_list = wide.replace(' - ', ' ').split(',')
+        wide_list = [w.split() for w in wide_list]
+        wide_list = np.vectorize(int)(wide_list)
+        wide_refund = wide_refund.split(',')
+        wide_refund = list(map(int, wide_refund))
     else:
         triple_list = None
-        refund = None
+        triple_refund = None
+        wide_list = None
+        wide_refund = None
 
-    return triple_list, refund
+    return triple_list, triple_refund, wide_list, wide_refund
 
 
 def get_race_list(date):
@@ -354,7 +373,7 @@ def get_race_list(date):
     categories = set(df['race_type'].unique().tolist())
     # print(categories)
 
-    return categories
+    return list(categories)
 
 
 def get_race_date(race):

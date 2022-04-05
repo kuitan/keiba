@@ -51,20 +51,20 @@ def get_test_data(param):
     # 騎手のリストを取得
     soup = BeautifulSoup(source_code, "html.parser")
     race_table = soup.select_one('div.RaceTableArea')
-    jockey_url_list = race_table.find_all('a', href=re.compile('/jockey/[0-90-9]+'))
+    jockey_url_list = race_table.find_all('a', href=re.compile('/jockey/result/recent/[0-90-9]+'))
 
     # horse_idを取得
     horse_list = race_table.find_all('a', href=re.compile('/horse/[0-90-9]+'))
     horse_id_list = []
     [horse_id_list.append(horse_url.attrs['href'].split('/')[4]) for horse_url in horse_list]
     # jockey_idを取得
-    jockey_list = race_table.find_all('a', href=re.compile('/jockey/[0-90-9]+'))
+    jockey_list = race_table.find_all('a', href=re.compile('/jockey/result/recent/[0-90-9]+'))
     jockey_id_list = []
-    [jockey_id_list.append(jockey_url.attrs['href'].split('/')[4]) for jockey_url in jockey_list]
+    [jockey_id_list.append(jockey_url.attrs['href'].split('/')[6]) for jockey_url in jockey_list]
     # trainer_idを取得
-    trainer_list = race_table.find_all('a', href=re.compile('/trainer/[0-90-9]+'))
+    trainer_list = race_table.find_all('a', href=re.compile('/trainer/result/recent/[0-90-9]+'))
     trainer_id_list = []
-    [trainer_id_list.append(trainer_url.attrs['href'].split('/')[4]) for trainer_url in trainer_list]
+    [trainer_id_list.append(trainer_url.attrs['href'].split('/')[6]) for trainer_url in trainer_list]
 
     jockey_list = []
     for jockey in jockey_url_list:
@@ -77,7 +77,7 @@ def get_test_data(param):
         jockey_list.append(title.split(' ')[0].replace('．', '')[:4])
 
     # 調教師のリストを取得
-    trainer_url_list = race_table.find_all('a', href=re.compile('/trainer/[0-90-9]+'))
+    trainer_url_list = race_table.find_all('a', href=re.compile('/trainer/result/recent/[0-90-9]+'))
 
     trainer_list = []
     for trainer, trainer_origin in zip(trainer_url_list, df['厩舎']):

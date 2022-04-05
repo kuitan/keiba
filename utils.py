@@ -46,8 +46,10 @@ def get_device():
     return device
 
 
-def bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list):
-    print(f'結果: {triple}')
+def bet_simulation(triple, triple_refund, wide, wide_refund, bet_top_list, bet_box_list, bet_form_list,
+                   bet_top_wide_list, bet_box_wide_list):
+
+    print(f'結果[ 1着: {triple[0]}, 2着: {triple[1]}, 3着: {triple[2]}]')
 
     # 上位3つの三連複を買う場合
     # 収出
@@ -60,10 +62,10 @@ def bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list):
             count += 1
         if count == 3:
             top_hit = True
-            print(f'的中! 払い戻し: {refund}')
+            print(f'的中! 払い戻し: {triple_refund}')
     # 的中の場合
     if top_hit:
-        top_refund = refund
+        top_refund = triple_refund
 
     # 上位5つの三連複をボックスで買う場合
     # 収出
@@ -77,10 +79,10 @@ def bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list):
                 count += 1
             if count == 3:
                 box_hit = True
-                print(f'的中! 払い戻し: {refund}')
+                print(f'的中! 払い戻し: {triple_refund}')
     # 的中の場合
     if box_hit:
-        box_refund = refund
+        box_refund = triple_refund
 
     # 上位5つの三連複をフォーメーションで買う場合
     # 収出
@@ -94,9 +96,39 @@ def bet_simulation(triple, refund, bet_top_list, bet_box_list, bet_form_list):
                 count += 1
             if count == 3:
                 form_hit = True
-                print(f'的中! 払い戻し: {refund}')
+                print(f'的中! 払い戻し: {triple_refund}')
     # 的中の場合
     if form_hit:
-        form_refund = refund
+        form_refund = triple_refund
 
-    return top_money, top_refund, box_money, box_refund, form_money, form_refund
+    # 上位2つのワイドを買う場合
+    # 収出
+    top_wide_money = 100
+    top_wide_refund = 0
+    for i, w in enumerate(wide):
+        count = 0
+        for bet_top_wide in bet_top_wide_list:
+            if bet_top_wide in w:
+                count += 1
+            if count == 2:
+                # 的中の場合
+                print(f'的中! 払い戻し: {wide_refund[i]}')
+                top_wide_refund = wide_refund[i]
+
+    # 上位3つのワイドをボックスで買う場合
+    # 収出
+    box_wide_money = len(bet_box_wide_list) * 100
+    box_wide_refund = 0
+    for i, w in enumerate(wide):
+        for bet_box_wide in bet_box_wide_list:
+            count = 0
+            for bet_wide in bet_box_wide:
+                if bet_wide in w:
+                    count += 1
+                if count == 2:
+                    # 的中の場合
+                    print(f'的中! 払い戻し: {wide_refund[i]}')
+                    box_wide_refund += wide_refund[i]
+
+    return top_money, top_refund, box_money, box_refund, form_money, form_refund, top_wide_money, top_wide_refund,\
+           box_wide_money, box_wide_refund

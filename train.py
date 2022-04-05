@@ -36,8 +36,8 @@ def train(param):
     # wine_class = pd.DataFrame(wine.target, columns=['class'])
 
     # データの確認
-    print(df.shape)  # データサイズの確認(データ数, 特徴量数)
-    display(df)  # df.head()に同じ(文中に入れるときはdisplay()を使う)
+    # print(df.shape)  # データサイズの確認(データ数, 特徴量数)
+    # display(df)
 
     # 説明変数,目的変数
     x = df.drop('target', axis=1).values  # 説明変数(target以外の特徴量)
@@ -179,11 +179,11 @@ def train(param):
 
         # 真値と予測値の表示
         df_pred = pd.DataFrame({'target': y_valid, 'pred': y_pred})
-        display(df_pred)
+        # display(df_pred)
 
         # 真値と予測確率の表示
         df_pred_prob = pd.DataFrame({'target': y_valid, 'target0_prob': 1 - y_pred_prob, 'target1_prob': y_pred_prob})
-        display(df_pred_prob)
+        # display(df_pred_prob)
 
         # モデル評価
         acc = accuracy_score(y_valid, y_pred)
@@ -213,7 +213,7 @@ def train(param):
         # df_pred = pd.DataFrame({'pred': t_pred})
         df_pred_prob = pd.DataFrame({'target0_prob': 1 - t_pred_prob, 'target1_prob': t_pred_prob})
         # print(df_pred)
-        print(df_pred_prob)
+        # print(df_pred_prob)
 
         # 買い目の馬を表示
         idx = np.arange(1, len(df_pred_prob) + 1)
@@ -225,11 +225,13 @@ def train(param):
         # 買い目の馬を返す
         # 上位3つの三連複を買う場合
         bet_top_list = df_s[:3]['horse_num'].values.tolist()
+        print('三連複買い目')
         print(bet_top_list)
 
         # 上位5つの三連複をボックスで買う場合
         triple_list = df_s[:5]['horse_num'].values.tolist()
         bet_box_list = [list(bet) for bet in itertools.combinations(triple_list, 3)]
+        print('三連複買い目(ボックス)')
         print(bet_box_list)
 
         # 上位5つの三連複をフォーメーションで買う場合
@@ -247,9 +249,21 @@ def train(param):
             bet_list2.append(triple_list[1])
             bet_form_list.append(bet_list1)
             bet_form_list.append(bet_list2)
+        print('三連複買い目(フォーメーション)')
         print(bet_form_list)
 
-        return bet_top_list, bet_box_list, bet_form_list
+        # 上位2つのワイドを買う場合
+        bet_top_wide_list = df_s[:2]['horse_num'].values.tolist()
+        print('ワイド買い目')
+        print(bet_top_wide_list)
+
+        # 上位3つのワイドをボックスで買う場合
+        wide_list = df_s[:3]['horse_num'].values.tolist()
+        bet_box_wide_list = [list(bet) for bet in itertools.combinations(wide_list, 2)]
+        print('ワイド買い目(ボックス)')
+        print(bet_box_wide_list)
+
+        return bet_top_list, bet_box_list, bet_form_list, bet_top_wide_list, bet_box_wide_list
     else:
         # モデル評価
         x_valid, y_valid = x_valid.to(device), y_valid.to(device)
