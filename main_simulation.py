@@ -39,6 +39,8 @@ def main():
     form_wallet_list = []
     top_wide_wallet_list = []
     box_wide_wallet_list = []
+    betting_ticket = 0
+    refund = 0
 
     for i, race in enumerate(main_race_list):
         # raceの日付を取得
@@ -57,31 +59,36 @@ def main():
                 = bet_simulation(triple, triple_refund, wide, wide_refund, bet_top_list, bet_box_list, bet_form_list,
                                  bet_top_wide_list, bet_box_wide_list)
             # 所持金を計算
-            top_wallet = top_wallet - top_money + top_refund
-            top_wallet_list.append(top_wallet)
-            print(f'所持金: {top_wallet}円: 上位3つの三連複を買う場合')
-            box_wallet = box_wallet - box_money + box_refund
-            box_wallet_list.append(box_wallet)
-            print(f'所持金: {box_wallet}円: 上位5つの三連複をボックスで買う場合')
-            form_wallet = form_wallet - form_money + form_refund
-            form_wallet_list.append(form_wallet)
-            print(f'所持金: {form_wallet}円: 上位5つの三連複をフォーメーションで買う場合')
+            # top_wallet = top_wallet - top_money + top_refund
+            # top_wallet_list.append(top_wallet)
+            # print(f'所持金: {top_wallet}円: 上位3つの三連複を買う場合')
+            # box_wallet = box_wallet - box_money + box_refund
+            # box_wallet_list.append(box_wallet)
+            # print(f'所持金: {box_wallet}円: 上位5つの三連複をボックスで買う場合')
+            # form_wallet = form_wallet - form_money + form_refund
+            # form_wallet_list.append(form_wallet)
+            # print(f'所持金: {form_wallet}円: 上位5つの三連複をフォーメーションで買う場合')
             top_wide_wallet = top_wide_wallet - top_wide_money + top_wide_refund
             top_wide_wallet_list.append(top_wide_wallet)
             print(f'所持金: {top_wide_wallet}円: 上位2つのワイドを買う場合')
-            box_wide_wallet = box_wide_wallet - box_wide_money + box_wide_refund
-            box_wide_wallet_list.append(box_wide_wallet)
-            print(f'所持金: {box_wide_wallet}円: 上位3つのワイドをボックスで買う場合')
+            # box_wide_wallet = box_wide_wallet - box_wide_money + box_wide_refund
+            # box_wide_wallet_list.append(box_wide_wallet)
+            # print(f'所持金: {box_wide_wallet}円: 上位3つのワイドをボックスで買う場合')
+
+            betting_ticket += top_wide_money
+            refund += top_wide_refund
+            recovery_rate = refund / betting_ticket * 100
 
         print(f'{i+1} / {len(main_race_list)}')
+        print(f'回収率: {recovery_rate:.1f}%')
 
     # 可視化
     plt.figure()
-    plt.plot(np.arange(len(top_wallet_list)), top_wallet_list, label='top_triple')
-    plt.plot(np.arange(len(box_wallet_list)), box_wallet_list, label='box_triple')
-    plt.plot(np.arange(len(form_wallet_list)), form_wallet_list, label='form_triple')
+    # plt.plot(np.arange(len(top_wallet_list)), top_wallet_list, label='top_triple')
+    # plt.plot(np.arange(len(box_wallet_list)), box_wallet_list, label='box_triple')
+    # plt.plot(np.arange(len(form_wallet_list)), form_wallet_list, label='form_triple')
     plt.plot(np.arange(len(top_wide_wallet_list)), top_wide_wallet_list, label='top_wide')
-    plt.plot(np.arange(len(box_wide_wallet_list)), box_wide_wallet_list, label='box_wide')
+    # plt.plot(np.arange(len(box_wide_wallet_list)), box_wide_wallet_list, label='box_wide')
     plt.xlabel('race num')
     plt.ylabel('wallet [yen]')
     plt.legend()

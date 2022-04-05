@@ -103,7 +103,7 @@ def bet_simulation(triple, triple_refund, wide, wide_refund, bet_top_list, bet_b
 
     # 上位2つのワイドを買う場合
     # 収出
-    top_wide_money = 100
+    top_wide_money = 500
     top_wide_refund = 0
     for i, w in enumerate(wide):
         count = 0
@@ -112,8 +112,8 @@ def bet_simulation(triple, triple_refund, wide, wide_refund, bet_top_list, bet_b
                 count += 1
             if count == 2:
                 # 的中の場合
-                print(f'的中! 払い戻し: {wide_refund[i]}')
-                top_wide_refund = wide_refund[i]
+                print(f'的中! 払い戻し: {wide_refund[i]*5}')
+                top_wide_refund = wide_refund[i]*5
 
     # 上位3つのワイドをボックスで買う場合
     # 収出
