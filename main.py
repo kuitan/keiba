@@ -14,8 +14,8 @@ def main():
     param.update({
         'train_file': f'{result_dir}preprocess.csv',
         'test_file': f'{result_dir}test_preprocess.csv',
-        'test_url': 'https://race.netkeiba.com/race/shutuba.html?race_id=202209020411',
-        'date': '20220403',
+        'test_url': 'https://race.netkeiba.com/race/shutuba.html?race_id=202205030211&rf=race_submenu',
+        'date': '20220605',
         'result_dir': result_dir
     })  # 追加パラメータ
 

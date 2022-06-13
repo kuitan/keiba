@@ -30,31 +30,21 @@ def train(param):
     df = pd.read_csv(f'{train_file}')
     df_test = pd.read_csv(f'{test_file}')
 
-    # ワインデータセットの読み込み
-    # wine = load_wine()
-    # wine_df = pd.DataFrame(wine.data, columns=wine.feature_names)
-    # wine_class = pd.DataFrame(wine.target, columns=['class'])
-
     # データの確認
     # print(df.shape)  # データサイズの確認(データ数, 特徴量数)
     # display(df)
 
     # 説明変数,目的変数
-    x = df.drop('target', axis=1).values  # 説明変数(target以外の特徴量)
+    x = df.drop(['target', 'popular'], axis=1).values  # 説明変数(target, popular以外の特徴量)
     y = df['target'].values  # 目的変数(target)
+    popular = df_test['popular'].values
     if model_param == 'gbm':
-        t = df_test
+        t = df_test.drop('popular', axis=1)
     else:
-        t = df_test.values
-
-    # wine_cat = pd.concat([wine_df, wine_class], axis=1)
-    # wine_cat.drop(wine_cat[wine_cat['class'] == 2].index, inplace=True)
-    # wine_data = wine_cat.values[:, :13]
-    # wine_target = wine_cat.values[:, 13]
+        t = df_test.drop('popular', axis=1).values
 
     # トレーニングデータ,テストデータの分割
     x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.20)
-    # x_train, x_valid, y_train, y_valid = train_test_split(wine_data, wine_target, test_size=0.25)
 
     # クラスの比率
     n_target0, n_target1 = len(df[df['target'] == 0]), len(df[df['target'] == 1])
@@ -157,7 +147,7 @@ def train(param):
 
     if model_param == 'gbm':
         # 特徴量重要度の算出 (データフレームで取得)
-        cols = list(df.drop('target', axis=1).columns)  # 特徴量名のリスト(目的変数target以外)
+        cols = list(df.drop(['target', 'popular'], axis=1).columns)  # 特徴量名のリスト(目的変数target以外)
         f_importance = np.array(model.feature_importance())  # 特徴量重要度の算出
         f_importance = f_importance / np.sum(f_importance)  # 正規化(必要ない場合はコメントアウト)
         df_importance = pd.DataFrame({'feature': cols, 'importance': f_importance})
@@ -218,6 +208,7 @@ def train(param):
         # 買い目の馬を表示
         idx = np.arange(1, len(df_pred_prob) + 1)
         df_pred_prob['horse_num'] = idx  # 馬番を追加
+        df_pred_prob['popular'] = popular
         df_s = df_pred_prob.sort_values('target1_prob', ascending=False)
         del df_s['target0_prob']
         print(df_s)
@@ -254,6 +245,8 @@ def train(param):
 
         # 上位2つのワイドを買う場合
         bet_top_wide_list = df_s[:2]['horse_num'].values.tolist()
+        # if df_s['popular'].iat[0] + df_s['popular'].iat[1] <= 5:  # オッズの低い馬券は買わない
+        #     bet_top_wide_list = []
         print('ワイド買い目')
         print(bet_top_wide_list)
 

@@ -252,7 +252,9 @@ def preprocess(param, date, race=None):
         if rank == 'test':
             name_list.append(name)
         else:
-            if re.compile('G\d').search(name):
+            if re.compile('J\.G\d').search(name):  # J.G1~3を排除
+                name_list.append('other_races')
+            elif re.compile('G\d').search(name):
                 name_list.append(re.findall('G\d', name)[0])
             elif re.compile('L').search(name):
                 name_list.append('L')
@@ -276,7 +278,7 @@ def preprocess(param, date, race=None):
 
     # 不要な属性を削除
     del df['horse_num']
-    del df['popular']
+    # del df['popular']
     del df['horse_name']
     del df['jockey']
     del df['trainer']
