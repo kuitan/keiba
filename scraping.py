@@ -10,11 +10,11 @@ from utils import date_range
 def get_data(url, proxies):
     result_dir = './data/'  # 結果を出力するディレクトリ名
 
-    for d in date_range(date(2022, 4, 30), date(2022, 6, 1)):
+    for d in date_range(date(2022, 4, 30), date(2022, 6, 15)):
         # dateを使った処理
         d = d.strftime("%Y%m%d")
 
-        res = requests.get(f'{url}/race/list/{d}/', proxies=proxies, verify=False)
+        res = requests.get(f'{url}/race/list/{d}/', proxies=proxies)
         time.sleep(1)
 
         # レースリストを取得
@@ -29,7 +29,7 @@ def get_data(url, proxies):
             # 各レース結果からデータを抽出
             for i, race in enumerate(race_list):
                 race_url = race.attrs['href']
-                res = requests.get(f'{url}{race_url}', proxies=proxies, verify=False)
+                res = requests.get(f'{url}{race_url}', proxies=proxies)
                 soup = BeautifulSoup(res.content, "html.parser")
 
                 df = pd.read_html(res.content, match='馬名')[0]  # Tableを抽出
@@ -109,7 +109,7 @@ def get_data(url, proxies):
 if __name__ == '__main__':
     url = 'https://db.netkeiba.com'
     proxies = {
-        "http": "http://proxy.nagaokaut.ac.jp:8080",
-        "https": "http://proxy.nagaokaut.ac.jp:8080"
+        # "http": "http://proxy.nagaokaut.ac.jp:8080",
+        # "https": "http://proxy.nagaokaut.ac.jp:8080"
     }
     get_data(url, proxies)

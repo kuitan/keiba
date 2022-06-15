@@ -1,4 +1,5 @@
-import pymysql.cursors
+# import pymysql.cursors
+import MySQLdb
 import pandas as pd
 import re
 from tqdm import tqdm
@@ -11,7 +12,7 @@ def get_sql(date, later=False, race=None):
     :return: df
     '''
 
-    connection = pymysql.connect(
+    connection = MySQLdb.connect(
         user='kkuriyama',
         passwd='kuitan812',
         host='localhost',  # 接続先DBのホスト名或いはIPに書き換えてください。
@@ -376,7 +377,7 @@ def get_race_list(date):
 
 
 def get_race_date(race):
-    connection = pymysql.connect(
+    connection = MySQLdb.connect(
         user='kkuriyama',
         passwd='kuitan812',
         host='localhost',  # 接続先DBのホスト名或いはIPに書き換えてください。
